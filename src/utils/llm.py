@@ -107,7 +107,8 @@ def create_default_response(model_class: type[BaseModel]) -> BaseModel:
 
 
 def extract_json_from_response(content: str) -> dict | None:
-    """Extracts JSON from markdown-formatted response."""
+    """Extracts JSON from LLM response, trying multiple strategies."""
+    # Strategy 1: ```json code block
     try:
         json_start = content.find("```json")
         if json_start != -1:
@@ -116,8 +117,49 @@ def extract_json_from_response(content: str) -> dict | None:
             if json_end != -1:
                 json_text = json_text[:json_end].strip()
                 return json.loads(json_text)
-    except Exception as e:
-        print(f"Error extracting JSON from response: {e}")
+    except Exception:
+        pass
+
+    # Strategy 2: ``` code block (without json label)
+    try:
+        json_start = content.find("```")
+        if json_start != -1:
+            json_text = content[json_start + 3 :]
+            json_end = json_text.find("```")
+            if json_end != -1:
+                json_text = json_text[:json_end].strip()
+                parsed = json.loads(json_text)
+                if isinstance(parsed, dict):
+                    return parsed
+    except Exception:
+        pass
+
+    # Strategy 3: Find first { ... } block in the content
+    try:
+        brace_start = content.find("{")
+        if brace_start != -1:
+            # Find the matching closing brace
+            depth = 0
+            for i in range(brace_start, len(content)):
+                if content[i] == "{":
+                    depth += 1
+                elif content[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        json_text = content[brace_start : i + 1]
+                        return json.loads(json_text)
+    except Exception:
+        pass
+
+    # Strategy 4: Try parsing entire content as JSON
+    try:
+        parsed = json.loads(content.strip())
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    print(f"Failed to extract JSON from response (length={len(content)}): {content[:200]}...")
     return None
 
 

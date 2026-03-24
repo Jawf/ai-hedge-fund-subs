@@ -8,6 +8,7 @@ from langchain_xai import ChatXAI
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_gigachat import GigaChat
 from langchain_ollama import ChatOllama
+from src.llm.cursor_chat import ChatCursorCLI
 from enum import Enum
 from pydantic import BaseModel
 from typing import Tuple, List
@@ -29,6 +30,7 @@ class ModelProvider(str, Enum):
     OPENROUTER = "OpenRouter"
     GIGACHAT = "GigaChat"
     AZURE_OPENAI = "Azure OpenAI"
+    CURSOR = "Cursor"
     XAI = "xAI"
 
 
@@ -51,6 +53,8 @@ class LLMModel(BaseModel):
         """Check if the model supports JSON mode"""
         if self.is_deepseek() or self.is_gemini():
             return False
+        if self.is_cursor():
+            return False
         # Only certain Ollama models support JSON mode
         if self.is_ollama():
             return "llama3" in self.model_name or "neural-chat" in self.model_name
@@ -70,6 +74,10 @@ class LLMModel(BaseModel):
     def is_ollama(self) -> bool:
         """Check if the model is an Ollama model"""
         return self.provider == ModelProvider.OLLAMA
+
+    def is_cursor(self) -> bool:
+        """Check if the model is a Cursor CLI model"""
+        return self.provider == ModelProvider.CURSOR
 
 
 # Load models from JSON file
@@ -215,6 +223,9 @@ def get_model(model_name: str, model_provider: ModelProvider, api_keys: dict = N
                 raise ValueError("GigaChat API key not found. Please make sure GIGACHAT_API_KEY is set in your .env file or provided via API keys.")
 
             return GigaChat(credentials=api_key, model=model_name)
+    elif model_provider == ModelProvider.CURSOR:
+        timeout = int(os.getenv("CURSOR_CLI_TIMEOUT", "120"))
+        return ChatCursorCLI(model=model_name, timeout=timeout)
     elif model_provider == ModelProvider.AZURE_OPENAI:
         # Get and validate API key
         api_key = os.getenv("AZURE_OPENAI_API_KEY")

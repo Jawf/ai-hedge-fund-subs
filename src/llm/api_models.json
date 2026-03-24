@@ -68,5 +68,25 @@
     "display_name": "Azure Open AI Deployment",
     "model_name": "",
     "provider": "Azure OpenAI"
+  },
+  {
+    "display_name": "Cursor (Default)",
+    "model_name": "cursor",
+    "provider": "Cursor"
+  },
+  {
+    "display_name": "Cursor (GPT-5.2)",
+    "model_name": "gpt-5.2",
+    "provider": "Cursor"
+  },
+  {
+    "display_name": "Cursor (Claude Sonnet 4.5)",
+    "model_name": "claude-sonnet-4-5",
+    "provider": "Cursor"
+  },
+  {
+    "display_name": "Cursor (Claude Haiku 4.5)",
+    "model_name": "claude-haiku-4-5",
+    "provider": "Cursor"
   }
 ]
